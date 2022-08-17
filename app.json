@@ -1,33 +1,28 @@
 {
   "expo": {
-    "name": "app-driver",
-    "slug": "app-driver",
-    "version": "1.0.0",
+    "name": "Expo Uber",
+    "description": "Uber: UI Clone with React Native & Expo",
+    "scheme": "uberclone",
+    "slug": "uberclone",
+    "privacy": "public",
+    "version": "0.0.1",
+    "platforms": ["android", "ios"],
+    "githubUrl": "https://github.com/calebnance/expo-uber",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "primaryColor": "#000000",
+    "icon": "src/assets/icon.png",
     "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#000000",
+      "image": "src/assets/splash.png",
+      "resizeMode": "contain"
     },
-    "updates": {
-      "fallbackToCacheTimeout": 0
-    },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
-    "ios": {
-      "supportsTablet": true
-    },
+    "assetBundlePatterns": ["**/*"],
     "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FFFFFF"
-      }
+      "versionCode": 1
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
+    "ios": {
+      "buildNumber": "0.0.1",
+      "supportsTablet": true
     }
   }
 }
