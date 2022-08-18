@@ -10,7 +10,8 @@ import * as Device from 'expo-device';
 
 // components
 import TouchText from '../components/TouchText';
-import { updateFCMToken } from '../apis/driver';
+import { acceptBooking, doneBooking, updateFCMToken } from '../apis/driver';
+import { getPassengerById } from '../apis/passenger';
 import { useSelector } from 'react-redux';
 
 import * as TaskManager from 'expo-task-manager';
@@ -36,9 +37,10 @@ const Home = ({ navigation }) => {
     latitudeDelta: 0.01,
     longitudeDelta: 0.01
   });
-  const [destination, setDestination] = React.useState();
   const [step, setStep] = React.useState(0);
   const [active, setActive] = React.useState(false);
+  const [incomingBooking, setIncomingBooking] = React.useState();
+  const [acceptedBooking, setAcceptedBooking] = React.useState();
 
   const notificationListener = React.useRef();
   const responseListener = React.useRef();
@@ -63,8 +65,16 @@ const Home = ({ navigation }) => {
 
       // This listener is fired whenever a notification is received while the app is foregrounded
       notificationListener.current =
-        Notifications.addNotificationReceivedListener((notification) => {
-          console.log({ notification });
+        Notifications.addNotificationReceivedListener(async (notification) => {
+          try {
+            const data = notification.request.content.data;
+            const passenger = await getPassengerById({ id: data.passengerId });
+
+            setIncomingBooking({ ...data, passenger });
+            setStep(1);
+          } catch (e) {
+            console.log(e);
+          }
         });
 
       // This listener is fired whenever a user taps on or interacts with a notification (works when app is foregrounded, backgrounded, or killed)
@@ -72,6 +82,36 @@ const Home = ({ navigation }) => {
         Notifications.addNotificationResponseReceivedListener((response) => {
           console.log({ response });
         });
+    }
+  };
+
+  const handleAccept = async () => {
+    if (auth) {
+      try {
+        setIncomingBooking(undefined);
+        setStep(2);
+
+        const res = await acceptBooking({
+          driverId: auth._id,
+          bookingId: incomingBooking._id
+        });
+
+        setAcceptedBooking(res);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+  };
+
+  const handleDone = async () => {
+    try {
+      const res = await doneBooking({ bookingId: acceptedBooking._id });
+      console.log(res);
+
+      setAcceptedBooking(undefined);
+      setStep(0);
+    } catch (e) {
+      console.log(e);
     }
   };
 
@@ -138,8 +178,6 @@ const Home = ({ navigation }) => {
     };
   }, [auth]);
 
-  console.log(coordinates);
-
   return (
     <View style={gStyle.container}>
       {showMap && (
@@ -150,13 +188,52 @@ const Home = ({ navigation }) => {
           showsUserLocation
           style={styles.map}
         >
-          {destination ? (
-            <Polyline
-              coordinates={[coordinates, destination]}
-              strokeColor={'21E1E1'}
-              strokeWidth={6}
-              lineDashPattern={[1]}
-            />
+          {acceptedBooking ? (
+            <>
+              {step === 2 && (
+                <Polyline
+                  coordinates={[
+                    {
+                      latitude: coordinates.latitude,
+                      longitude: coordinates.longitude,
+                      latitudeDelta: 0.01,
+                      longitudeDelta: 0.01
+                    },
+                    {
+                      latitude: acceptedBooking.from.latitude,
+                      longitude: acceptedBooking.from.longitude,
+                      latitudeDelta: 0.01,
+                      longitudeDelta: 0.01
+                    }
+                  ]}
+                  strokeColor={'21E1E1'}
+                  strokeWidth={6}
+                  lineDashPattern={[1]}
+                />
+              )}
+
+              {step === 3 && (
+                <Polyline
+                  coordinates={[
+                    {
+                      latitude: acceptedBooking.from.latitude,
+                      longitude: acceptedBooking.from.longitude,
+                      latitudeDelta: 0.01,
+                      longitudeDelta: 0.01
+                    },
+                    {
+                      latitude: acceptedBooking.to.latitude,
+                      longitude: acceptedBooking.to.longitude,
+                      latitudeDelta: 0.01,
+                      longitudeDelta: 0.01
+                    }
+                  ]}
+                  strokeColor={'21E1E1'}
+                  strokeWidth={6}
+                  lineDashPattern={[1]}
+                />
+              )}
+            </>
           ) : null}
         </MapView>
       )}
@@ -183,10 +260,47 @@ const Home = ({ navigation }) => {
 
       {step !== 0 && (
         <View style={styles.bookButton}>
-          {step === 1 && <Button mode="contained">Đặt xe</Button>}
+          {step === 1 && incomingBooking && (
+            <View style={styles.bookingContainer}>
+              <Text style={styles.bookingTitle}>Thông tin cuốc xe</Text>
+              <Text
+                style={styles.bookingInfo}
+              >{`Người đặt: ${incomingBooking.passenger.fullName}`}</Text>
+              <Text
+                style={styles.bookingInfo}
+              >{`Điểm đón: ${incomingBooking.from.address}`}</Text>
+              <Text
+                style={styles.bookingInfo}
+              >{`Điểm đến: ${incomingBooking.to.address}`}</Text>
 
-          {step == 2 && (
-            <Text style={styles.findingDriver}>Đang tìm tài xế ...</Text>
+              <Button mode="contained" onPress={handleAccept}>
+                Nhận cuốc
+              </Button>
+              <Button
+                mode="contained"
+                onPress={() => {
+                  setIncomingBooking(undefined);
+                  setStep(0);
+                }}
+              >
+                Huỷ
+              </Button>
+            </View>
+          )}
+          {step === 2 && (
+            <View style={styles.bookingContainer}>
+              <Button mode="contained" onPress={() => setStep(3)}>
+                Đón khách
+              </Button>
+            </View>
+          )}
+
+          {step === 3 && (
+            <View style={styles.bookingContainer}>
+              <Button mode="contained" onPress={handleDone}>
+                Trả khách
+              </Button>
+            </View>
           )}
         </View>
       )}
@@ -279,6 +393,21 @@ const styles = StyleSheet.create({
     top: 80,
     width: device.width - 40,
     alignSelf: 'center'
+  },
+  bookingContainer: {
+    backgroundColor: '#fff',
+    padding: 8,
+    borderRadius: 4
+  },
+  bookingTitle: {
+    fontSize: 18,
+    marginBottom: 4,
+    textAlign: 'center'
+  },
+  bookingInfo: {
+    fontSize: 16,
+    marginBottom: 8,
+    fontWeight: 'bold'
   }
 });
 
