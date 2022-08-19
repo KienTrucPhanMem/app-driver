@@ -53,7 +53,6 @@ const Home = ({ navigation }) => {
       registerForPushNotificationsAsync()
         .then(async (token) => {
           try {
-            console.log(auth);
             const res = await updateFCMToken({ id: auth._id, token });
 
             console.log(res);
@@ -88,15 +87,14 @@ const Home = ({ navigation }) => {
   const handleAccept = async () => {
     if (auth) {
       try {
-        setIncomingBooking(undefined);
-        setStep(2);
-
         const res = await acceptBooking({
           driverId: auth._id,
           bookingId: incomingBooking._id
         });
 
         setAcceptedBooking(res);
+        setIncomingBooking(undefined);
+        setStep(2);
       } catch (e) {
         console.log(e);
       }

@@ -14,7 +14,7 @@ const Drawer = createDrawerNavigator();
 export default ({ navigation }) => {
   const auth = useSelector((state) => state.auth);
 
-  // const dispatch = useDispatch();
+  const dispatch = useDispatch();
 
   React.useEffect(() => {
     if (!auth.accessToken) {
