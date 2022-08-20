@@ -96,6 +96,7 @@ const Home = ({ navigation }) => {
         setIncomingBooking(undefined);
         setStep(2);
       } catch (e) {
+        setStep(0);
         console.log(e);
       }
     }
