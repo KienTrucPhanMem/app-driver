@@ -20,9 +20,11 @@ export default ({ navigation }) => {
     if (!auth.accessToken) {
       navigation.navigate('LoginScreen');
     }
-
-    // dispatch(resetAuth());
   });
+
+  React.useEffect(() => {
+    dispatch(resetAuth());
+  }, []);
 
   if (!auth.accessToken) return null;
 
