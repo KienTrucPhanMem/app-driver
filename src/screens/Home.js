@@ -11,10 +11,12 @@ import * as Device from 'expo-device';
 // components
 import TouchText from '../components/TouchText';
 import { acceptBooking, doneBooking, updateFCMToken } from '../apis/driver';
-import { getPassengerById } from '../apis/passenger';
+import { getPassengerById, pushNotificationPassenger } from '../apis/passenger';
 import { useSelector } from 'react-redux';
 
 import * as TaskManager from 'expo-task-manager';
+import { getDistanceFromLatLonInKm } from '../helpers/getDistanceFromLatLonInKm';
+import { io } from 'socket.io-client';
 // icons
 
 const { PROVIDER_GOOGLE } = MapView;
@@ -44,6 +46,8 @@ const Home = ({ navigation }) => {
 
   const notificationListener = React.useRef();
   const responseListener = React.useRef();
+  const watchLocation = React.useRef();
+  const socket = React.useRef();
 
   const handleToggleStatus = () => {
     //Call to server
@@ -54,8 +58,6 @@ const Home = ({ navigation }) => {
         .then(async (token) => {
           try {
             const res = await updateFCMToken({ id: auth._id, token });
-
-            console.log(res);
           } catch (e) {
             console.log(e);
           }
@@ -114,17 +116,6 @@ const Home = ({ navigation }) => {
     }
   };
 
-  TaskManager.defineTask(
-    'UPDATE_LOCATION',
-    ({ data: { locations }, error }) => {
-      if (error) {
-        // check `error.message` for more details.
-        return;
-      }
-      console.log('Received new locations', locations);
-    }
-  );
-
   //Get location
   React.useEffect(() => {
     const getLocation = async () => {
@@ -154,16 +145,65 @@ const Home = ({ navigation }) => {
       setShowMap(true);
     };
 
-    getLocation().catch(console.error);
-  }, []);
+    if (auth) {
+      getLocation().catch(console.error);
+    }
+  }, [auth]);
 
   React.useEffect(() => {
-    Location.startLocationUpdatesAsync('UPDATE_LOCATION', {
-      deferredUpdatesInterval: 500
-    });
+    if (auth) {
+      socket.current = io('https://ktpm-gateway.herokuapp.com', {
+        path: '/drivers/socket',
+        transports: ['websocket']
+      });
 
-    return () => Location.stopLocationUpdatesAsync('UPDATE_LOCATION');
-  }, []);
+      console.log(socket.current);
+
+      socket.current.emit('join', auth._id);
+    }
+  }, [auth]);
+
+  React.useEffect(() => {
+    if (showMap)
+      watchLocation.current = Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.High,
+          distanceInterval: 0,
+          timeInterval: 500
+        },
+        async (location) => {
+          socket.current.emit('update-location', {
+            longitude: location.coords.longitude,
+            latitude: location.coords.latitude
+          });
+
+          if (step !== 2 || !acceptedBooking) return;
+
+          if (
+            getDistanceFromLatLonInKm(
+              location.coords.latitude,
+              location.coords.longitude,
+              acceptedBooking.from.latitude,
+              acceptedBooking.to.longitude
+            ) <= 0.5
+          ) {
+            try {
+              await pushNotificationPassenger({
+                passengerId: acceptedBooking.passengerId,
+                title: 'Tài xế của bạn sắp đến',
+                body: ' '
+              });
+            } catch (e) {
+              console.log(e);
+            }
+          }
+        }
+      );
+
+    return () => {
+      if (watchLocation.current) watchLocation.current.remove();
+    };
+  }, [showMap, step, acceptedBooking]);
 
   //Get notification
   React.useEffect(() => {

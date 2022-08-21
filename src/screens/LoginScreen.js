@@ -34,6 +34,9 @@ export default function LoginScreen({ navigation }) {
       const res = await login({ phone: phone.value, password: password.value });
       const infoRes = await getDriverByPhone({ phone: phone.value });
 
+      console.log(res);
+      console.log(infoRes);
+
       dispatch(setAuth({ ...res, ...infoRes }));
       navigation.navigate('DrawerStack');
     } catch (e) {
