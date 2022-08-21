@@ -52,6 +52,11 @@ const Home = ({ navigation }) => {
   const handleToggleStatus = () => {
     //Call to server
     if (auth) {
+      if (!active) socket.current.emit('join', auth._id);
+      else {
+        socket.current.emit('stop');
+      }
+
       setActive((state) => !state);
 
       registerForPushNotificationsAsync()
@@ -156,10 +161,6 @@ const Home = ({ navigation }) => {
         path: '/drivers/socket',
         transports: ['websocket']
       });
-
-      console.log(socket.current);
-
-      socket.current.emit('join', auth._id);
     }
   }, [auth]);
 
