@@ -10,7 +10,12 @@ import * as Device from 'expo-device';
 
 // components
 import TouchText from '../components/TouchText';
-import { acceptBooking, doneBooking, updateFCMToken } from '../apis/driver';
+import {
+  acceptBooking,
+  cancelBooking,
+  doneBooking,
+  updateFCMToken
+} from '../apis/driver';
 import { getPassengerById, pushNotificationPassenger } from '../apis/passenger';
 import { useSelector } from 'react-redux';
 
@@ -112,6 +117,22 @@ const Home = ({ navigation }) => {
   const handleDone = async () => {
     try {
       const res = await doneBooking({ bookingId: acceptedBooking._id });
+      console.log(res);
+
+      setAcceptedBooking(undefined);
+      setStep(0);
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+  const handleCancel = async () => {
+    try {
+      const res = await cancelBooking({
+        bookingId: acceptedBooking._id,
+        driverId: auth._id
+      });
+
       console.log(res);
 
       setAcceptedBooking(undefined);
@@ -331,6 +352,10 @@ const Home = ({ navigation }) => {
             <View style={styles.bookingContainer}>
               <Button mode="contained" onPress={() => setStep(3)}>
                 Đón khách
+              </Button>
+
+              <Button mode="contained" onPress={handleCancel}>
+                Huỷ cuốc
               </Button>
             </View>
           )}
