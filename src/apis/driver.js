@@ -17,5 +17,5 @@ export const doneBooking = async ({ bookingId }) => {
 };
 
 export const cancelBooking = async ({ bookingId, driverId }) => {
-  return axiosClient.put(`/drivers/done`, { bookingId, driverId });
+  return axiosClient.put(`/drivers/cancel`, { bookingId, driverId });
 };

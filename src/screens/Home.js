@@ -186,8 +186,8 @@ const Home = ({ navigation }) => {
   }, [auth]);
 
   React.useEffect(() => {
-    if (showMap)
-      watchLocation.current = Location.watchPositionAsync(
+    async function startWatchLocation() {
+      watchLocation.current = await Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.High,
           distanceInterval: 0,
@@ -221,6 +221,9 @@ const Home = ({ navigation }) => {
           }
         }
       );
+    }
+
+    if (showMap) startWatchLocation();
 
     return () => {
       if (watchLocation.current) watchLocation.current.remove();
