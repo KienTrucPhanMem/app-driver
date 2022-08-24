@@ -6,9 +6,12 @@ import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { func } from './src/constants';
 import { persistor, store } from './src/redux/store';
+import { LogBox } from 'react-native';
 
 // root stack navigation
 import RootStack from './src/navigation/RootStack';
+
+LogBox.ignoreAllLogs(); //Ignore all log notifications
 
 const App = () => {
   const [isLoading, setIsLoading] = React.useState(true);

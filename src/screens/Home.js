@@ -117,8 +117,15 @@ const Home = ({ navigation }) => {
   const handleDone = async () => {
     try {
       const res = await doneBooking({ bookingId: acceptedBooking._id });
-      console.log(res);
 
+      setStep(4);
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+  const handleFinish = async () => {
+    try {
       setAcceptedBooking(undefined);
       setStep(0);
     } catch (e) {
@@ -336,6 +343,9 @@ const Home = ({ navigation }) => {
               <Text
                 style={styles.bookingInfo}
               >{`Điểm đến: ${incomingBooking.to.address}`}</Text>
+              <Text
+                style={styles.bookingInfo}
+              >{`Phí: ${incomingBooking.cost} vnd`}</Text>
 
               <Button mode="contained" onPress={handleAccept}>
                 Nhận cuốc
@@ -367,6 +377,13 @@ const Home = ({ navigation }) => {
             <View style={styles.bookingContainer}>
               <Button mode="contained" onPress={handleDone}>
                 Trả khách
+              </Button>
+            </View>
+          )}
+          {step === 4 && (
+            <View style={styles.bookingContainer}>
+              <Button mode="contained" onPress={handleFinish}>
+                {`Hoàn thành. Phí ${acceptedBooking.cost}k`}
               </Button>
             </View>
           )}
